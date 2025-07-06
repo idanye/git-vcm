@@ -9,9 +9,7 @@ Built with 🐚 Bash and powered by [gum](https://github.com/charmbracelet/gum) 
 ## ✨ Features
 
 * Parses branch prefix like `VAL-1234`
-* Commit type selection with emoji UI and search-as-you-type (like `git cz`)
-* Short commit message (max 55 chars, min 3 chars)
-* Optional long description input
+* Commit type selection with emoji UI
 * Validates staged changes and prefix
 * Works with Git via `git vcm` alias
 
