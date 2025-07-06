@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Ensure we're inside a Git repo
+if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+  echo "❌ You are not inside a Git repository."
+  exit 1
+fi
+
+# Check for staged changes
+if ! git diff --cached --quiet; then
+  :
+else
+  echo "⚠️  No staged changes to commit."
+  exit 0
+fi
+
+# Check gum is installed
+if ! command -v gum &>/dev/null; then
+  echo "❌ gum is not installed. Install it from https://github.com/charmbracelet/gum"
+  exit 1
+fi
+
+# Get branch name and extract prefix
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+PREFIX=$(echo "$BRANCH" | grep -oE '^[A-Z]+-[0-9]+')
+
+if [ -z "$PREFIX" ]; then
+  echo "⚠️  Could not extract prefix from branch '$BRANCH'."
+  read -p "Enter a prefix manually (or leave blank to skip): " PREFIX
+fi
+
+# Define types with emoji for display
+TYPES_DISPLAY=(
+  "🎸 feat:       A new feature"
+  "🐛 fix:        A bug fix"
+  "✏️  docs:       Documentation only changes"
+  "💄 style:      Markup, white-space, formatting, etc."
+  "💡 refactor:   A code change that neither fixes a bug nor adds a feature"
+  "⚡️ perf:       A code change that improves performance"
+  "💍 test:       Adding missing tests"
+  "🤖 chore:      Build process or auxiliary tool changes"
+  "🎡 ci:         CI related changes"
+)
+
+# Corresponding type keys (no emoji, used in commit message)
+TYPES_KEYS=(
+  "feat"
+  "fix"
+  "docs"
+  "style"
+  "refactor"
+  "perf"
+  "test"
+  "chore"
+  "ci"
+)
+
+# Show gum menu with emoji
+SELECTED_TYPE=$(printf "%s\n" "${TYPES_DISPLAY[@]}" | gum choose --header "Select commit type:")
+
+# Exit if the user cancelled
+if [ -z "$SELECTED_TYPE" ]; then
+  echo "❌ Commit cancelled."
+  exit 1
+fi
+
+# Find index of selected item
+TYPE_INDEX=$(printf "%s\n" "${TYPES_DISPLAY[@]}" | grep -nFx "$SELECTED_TYPE" | cut -d: -f1)
+
+if [ -z "$TYPE_INDEX" ]; then
+  echo "❌ Invalid selection."
+  exit 1
+fi
+
+TYPE_KEY="${TYPES_KEYS[$((TYPE_INDEX - 1))]}"
+
+# Prompt for commit message
+MESSAGE=$(gum input --placeholder "Enter commit message")
+
+if [ -z "$MESSAGE" ]; then
+  echo "❌ Commit message cannot be empty."
+  exit 1
+fi
+
+# Compose final message: VAL-1234 [feat] Add login flow
+if [ -n "$PREFIX" ]; then
+  FINAL_MESSAGE="$PREFIX [$TYPE_KEY] $MESSAGE"
+else
+  FINAL_MESSAGE="[$TYPE_KEY] $MESSAGE"
+fi
+
+# Confirm and commit
+echo ""
+echo "✅ Final commit message:"
+echo "$FINAL_MESSAGE"
+echo ""
+
+gum confirm "Commit with this message?" && git commit -m "$FINAL_MESSAGE" || echo "❌ Commit cancelled."
