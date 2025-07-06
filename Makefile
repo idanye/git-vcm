@@ -2,6 +2,12 @@ BIN_DIR := $(HOME)/bin
 SCRIPT := git-vcm
 INSTALL_PATH := $(BIN_DIR)/$(SCRIPT)
 
+help:
+	@echo "Usage:"
+	@echo "  make install     Install git-vcm to ~/bin and set git alias"
+	@echo "  make uninstall   Remove git-vcm and git alias"
+	@echo "  make zsh-setup   Ensure ~/bin is in PATH (for Zsh users)"
+
 install:
 	@mkdir -p $(BIN_DIR)
 	@cp $(SCRIPT) $(INSTALL_PATH)
@@ -18,4 +24,4 @@ uninstall:
 	@git config --global --unset alias.vcm || true
 	@echo "🧹 Uninstalled git vcm and cleaned up alias."
 
-.PHONY: install zsh-setup uninstall
+.PHONY: install zsh-setup uninstall help
