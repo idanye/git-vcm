@@ -58,8 +58,8 @@ git vcm
 You’ll be prompted to:
 
 1. Choose a commit type
-2. Write a short description (max 55 chars)
-3. Optionally provide a long description
+2. Write a short description
+3. Review your message and approve or cancel to commit
 
 Commit message format:
 
