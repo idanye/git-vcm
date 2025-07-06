@@ -27,6 +27,7 @@ PREFIX=$(echo "$BRANCH" | grep -oE '^[A-Z]+-[0-9]+')
 if [ -z "$PREFIX" ]; then
   echo "⚠️  Could not extract prefix from branch '$BRANCH'."
   read -p "Enter a prefix manually (or leave blank to skip): " PREFIX
+  echo
 fi
 
 # Define types with emoji for display
@@ -56,7 +57,11 @@ TYPES_KEYS=(
 )
 
 # Show gum menu with emoji
-SELECTED_TYPE=$(printf "%s\n" "${TYPES_DISPLAY[@]}" | gum choose --header "Select commit type:")
+SELECTED_TYPE=$(printf "%s\n" "${TYPES_DISPLAY[@]}" | gum choose \
+  --header "? Select the type of change that you're committing: (Use arrow keys to choose)" \
+  --header.foreground="#39dae9" \
+  --selected.background="#303030" \
+  --selected.foreground="#80CBC4")
 
 # Exit if the user cancelled
 if [ -z "$SELECTED_TYPE" ]; then
@@ -74,11 +79,15 @@ fi
 
 TYPE_KEY="${TYPES_KEYS[$((TYPE_INDEX - 1))]}"
 
-# Prompt for commit message
-MESSAGE=$(gum input --placeholder "Enter commit message")
+# Short message prompt with limit
+MESSAGE=$(gum input \
+  --header "? Write a short description of the change:" \
+  --placeholder "$TYPE_KEY " \
+  --header.foreground="#39dae9" \
+  --prompt.foreground="#39dae9")
 
 if [ -z "$MESSAGE" ]; then
-  echo "❌ Commit message cannot be empty."
+  echo "❌ Commit message must be at least 3 characters."
   exit 1
 fi
 
@@ -90,9 +99,8 @@ else
 fi
 
 # Confirm and commit
-echo ""
-echo "✅ Final commit message:"
-echo "$FINAL_MESSAGE"
-echo ""
+printf "✅ Final commit message:\n%s\n\n" "$FINAL_MESSAGE"
 
-gum confirm "Commit with this message?" && git commit -m "$FINAL_MESSAGE" || echo "❌ Commit cancelled."
+gum confirm "Commit with this message?" --selected.foreground="#39dae9" && \
+  git commit -m "$FINAL_MESSAGE" || \
+  echo "❌ Commit cancelled."
