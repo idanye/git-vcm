@@ -26,8 +26,41 @@ PREFIX=$(echo "$BRANCH" | grep -oE '^[A-Z]+-[0-9]+')
 
 if [ -z "$PREFIX" ]; then
   echo "⚠️  Could not extract prefix from branch '$BRANCH'."
-  read -p "Enter a prefix manually (or leave blank to skip): " PREFIX
-  echo
+  
+  # Define common project keys
+  PROJECT_KEYS=("VAL" "CON")
+  
+  # First step: Select project key
+  SELECTED_KEY=$(printf "%s\n" "${PROJECT_KEYS[@]}" "Other" | gum choose --header "Select project key:" --header.foreground="#39dae9")
+  
+  if [ "$SELECTED_KEY" = "Other" ]; then
+    PROJECT_KEY=$(gum input --header "Enter project key (letters before dash):" --placeholder "VAL" --header.foreground="#39dae9")
+  else
+    PROJECT_KEY=$SELECTED_KEY
+  fi
+  
+  # Exit if project key is empty
+  if [ -z "$PROJECT_KEY" ]; then
+    echo -e "❌ No project key provided. \n\tExiting."
+    exit 1
+  fi
+  
+  echo "Project key: $PROJECT_KEY"
+
+  # Second step: Enter issue number
+  ISSUE_NUMBER=$(gum input --header "Enter issue number:" --placeholder "1234" --header.foreground="#39dae9")
+  
+  # Exit if issue number is empty
+  if [ -z "$ISSUE_NUMBER" ]; then
+    echo -e "❌ No issue number provided. \n\tExiting."
+    exit 1
+  fi
+  
+  echo "Issue number: $ISSUE_NUMBER"
+
+  PREFIX="${PROJECT_KEY}-${ISSUE_NUMBER}"
+
+  echo -e "\nFull prefix: $PREFIX\n"
 fi
 
 # Define types with emoji for display
@@ -103,4 +136,4 @@ printf "✅ Final commit message:\n%s\n\n" "$FINAL_MESSAGE"
 
 gum confirm "Commit with this message?" --selected.foreground="#39dae9" && \
   git commit -m "$FINAL_MESSAGE" || \
-  echo "❌ Commit cancelled."
+  echo -e "❌ Commit cancelled. \n\tExiting."
