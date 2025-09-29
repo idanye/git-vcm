@@ -22,45 +22,54 @@ fi
 
 # Get branch name and extract prefix
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-PREFIX=$(echo "$BRANCH" | grep -oE '^[A-Z]+-[0-9]+')
+
+# 'VAL-1234' in the start or anywhere in the branch name
+PREFIX=$(echo "$BRANCH" | grep -oE '[A-Z]+-[0-9]+')
 
 if [ -z "$PREFIX" ]; then
   echo "⚠️  Could not extract prefix from branch '$BRANCH'."
   
-  # Define common project keys
-  PROJECT_KEYS=("VAL" "CON")
-  
-  # First step: Select project key
-  SELECTED_KEY=$(printf "%s\n" "${PROJECT_KEYS[@]}" "Other" | gum choose --header "Select project key:" --header.foreground="#39dae9")
-  
-  if [ "$SELECTED_KEY" = "Other" ]; then
-    PROJECT_KEY=$(gum input --header "Enter project key (letters before dash):" --placeholder "VAL" --header.foreground="#39dae9")
+  # Ask if user wants to add a prefix
+  if gum confirm "Do you want to add a prefix to your commit?" --default=false --selected.foreground="#39dae9"; then
+    # Define common project keys
+    PROJECT_KEYS=("VAL" "CON")
+    
+    # First step: Select project key
+    SELECTED_KEY=$(printf "%s\n" "${PROJECT_KEYS[@]}" "Other" | gum choose --header "Select project key:" --header.foreground="#39dae9")
+    
+    if [ "$SELECTED_KEY" = "Other" ]; then
+      PROJECT_KEY=$(gum input --header "Enter project key (letters before dash):" --placeholder "VAL" --header.foreground="#39dae9")
+    else
+      PROJECT_KEY=$SELECTED_KEY
+    fi
+    
+    # Exit if project key is empty
+    if [ -z "$PROJECT_KEY" ]; then
+      echo -e "❌ No project key provided. \n\tExiting."
+      exit 1
+    fi
+    
+    echo "Project key: $PROJECT_KEY"
+
+    # Second step: Enter issue number
+    ISSUE_NUMBER=$(gum input --header "Enter issue number:" --placeholder "1234" --header.foreground="#39dae9")
+    
+    # Exit if issue number is empty
+    if [ -z "$ISSUE_NUMBER" ]; then
+      echo -e "❌ No issue number provided. \n\tExiting."
+      exit 1
+    fi
+    
+    echo "Issue number: $ISSUE_NUMBER"
+
+    PREFIX="${PROJECT_KEY}-${ISSUE_NUMBER}"
+
+    echo -e "\nFull prefix: $PREFIX\n"
   else
-    PROJECT_KEY=$SELECTED_KEY
+    # User doesn't want a prefix
+    PREFIX=""
+    echo -e "Continuing without a prefix.\n"
   fi
-  
-  # Exit if project key is empty
-  if [ -z "$PROJECT_KEY" ]; then
-    echo -e "❌ No project key provided. \n\tExiting."
-    exit 1
-  fi
-  
-  echo "Project key: $PROJECT_KEY"
-
-  # Second step: Enter issue number
-  ISSUE_NUMBER=$(gum input --header "Enter issue number:" --placeholder "1234" --header.foreground="#39dae9")
-  
-  # Exit if issue number is empty
-  if [ -z "$ISSUE_NUMBER" ]; then
-    echo -e "❌ No issue number provided. \n\tExiting."
-    exit 1
-  fi
-  
-  echo "Issue number: $ISSUE_NUMBER"
-
-  PREFIX="${PROJECT_KEY}-${ISSUE_NUMBER}"
-
-  echo -e "\nFull prefix: $PREFIX\n"
 fi
 
 # Define types with emoji for display
